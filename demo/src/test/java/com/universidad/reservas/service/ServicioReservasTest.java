@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.universidad.reservas.model.Habitacion;
@@ -70,8 +69,6 @@ class ServicioReservasTest {
         // - hoy: la fecha de hoy (LocalDate.now())
         // - manana: la fecha de mañana (hoy.plusDays(1))
 
-    MockitoAnnotations.openMocks(this);
-
     servicioReservas = new ServicioReservas(pasarelaPago, servicioNotificacion);
 
     
@@ -113,24 +110,19 @@ class ServicioReservasTest {
             // - assertEquals(360.0, reserva.totalPagado())
             // - assertNotNull(reserva.codigoReserva())
 
-    
-            String huesped = "Carlos Pérez";
-            double montoEsperado = 3 * 20.0;
-
-            when(pasarelaPago.procesarCobro(eq(huesped), eq(montoEsperado)))
-                .thenReturn(true);
+            when(pasarelaPago.procesarCobro(eq("Carlos Pérez"), eq(360.0))).thenReturn(true);
 
            
             Reserva reserva = servicioReservas.crearReserva(
-                huesped,
+                "Carlos Pérez",
                 habitacionDisponible,
                 hoy,
                 hoy.plusDays(3)
             );
 
             assertNotNull(reserva, "La reserva no debe ser null");
-            assertEquals(huesped, reserva.huesped(), "El huésped debe coincidir");
-            assertEquals(montoEsperado, reserva.totalPagado(), 0.001, "El monto total debe ser correcto");
+            assertEquals("Carlos Pérez", reserva.huesped(), "El huésped debe coincidir");
+            assertEquals(360.0, reserva.totalPagado(), "El monto total debe ser correcto");
             assertNotNull(reserva.codigoReserva(), "Debe generar un código de reserva");
         
         }
@@ -187,7 +179,6 @@ class ServicioReservasTest {
             // - Dentro del lambda, llama a crearReserva con la habitacionNoDisponible
             // - Verifica que el mensaje de la excepción contiene "no está disponible"
 
-            String noDisponible = "La habitación no está disponible";
 
             IllegalStateException excepcion = assertThrows(
             IllegalStateException.class, () -> servicioReservas.crearReserva(
@@ -196,10 +187,13 @@ class ServicioReservasTest {
                 habitacionNoDisponible, 
                 hoy, 
                 hoy.plusDays(5)),
-                noDisponible
+                "no está disponible"
             );
 
-            assertTrue(excepcion.getMessage().contains(noDisponible));
+
+            assertTrue(excepcion.getMessage().contains("no está disponible"));
+
+        
 
 
             // Pista: assertThrows retorna la excepción lanzada.
@@ -379,7 +373,7 @@ class ServicioReservasTest {
             // ASSERT:
             // - assertEquals(500.0, total)
 
-            assertEquals(500, total);
+            assertEquals(500.0, total);
         };
 
         @Test
@@ -398,8 +392,7 @@ class ServicioReservasTest {
             // ASSERT:
             // - assertEquals(1800.0, total)
 
-            assertEquals(1800, total);
-            assertTrue(!eq(20000 != total));
+            assertEquals(1800.0, total);
         }
     }
 }
