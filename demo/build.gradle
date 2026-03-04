@@ -2,6 +2,7 @@
 
 plugins {
     id 'java'
+    id 'jacoco'                           // ← Agregado: plugin oficial de JaCoCo
 }
 
 group = 'com.universidad'
@@ -28,10 +29,13 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.21.0'
 }
 
- configurations {
-     mockitoAgent
- }
+configurations {
+    mockitoAgent
+}
 
+jacoco {
+    toolVersion = "0.8.14"                // Versión reciente (octubre 2025), soporta Java 25
+}
 
 test {
     useJUnitPlatform()
@@ -39,4 +43,52 @@ test {
         events "passed", "skipped", "failed"
         showStandardStreams = true
     }
+    
+    // Opcional: si quieres que el agente JaCoCo se aplique automáticamente en los tests
+    // (normalmente no es necesario, Gradle lo maneja bien con el plugin)
+    // jacoco { destinationFile = layout.buildDirectory.file("jacoco/test.exec") }
+    
+    // Ejecuta el reporte JaCoCo automáticamente después de los tests
+    finalizedBy jacocoTestReport
 }
+
+jacocoTestReport {
+    dependsOn test                         // Asegura que los tests se ejecuten antes
+    
+    reports {
+        xml.required = true                // Útil para CI / GitHub Actions
+        csv.required = false
+        html.required = true               // Reporte HTML bonito → build/reports/jacoco/test/html/index.html
+    }
+    
+    // Opcional: solo incluir clases de tu paquete principal (ajusta según tu estructura)
+    // afterEvaluate {
+    //     classDirectories.setFrom(files(classDirectories.files.collect {
+    //         fileTree(dir: it, exclude: ['com/universidad/reservas/**/model/**']) // ejemplo de exclusión
+    //     }))
+    // }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.60             // 60% cobertura mínima en instrucciones (ajusta o comenta si no quieres fallo)
+            }
+        }
+        
+        // Puedes agregar reglas más específicas si quieres
+        // rule {
+        //     element = 'CLASS'
+        //     includes = ['com.universidad.reservas.service.*']
+        //     limit {
+        //         counter = 'BRANCH'
+        //         value = 'COVEREDRATIO'
+        //         minimum = 0.50
+        //     }
+        // }
+    }
+}
+
+// Opcional: hacer que el build falle si no cumple cobertura (útil en CI)
+check.dependsOn jacocoTestCoverageVerification
